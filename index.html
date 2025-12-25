@@ -3,68 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎄 韩老魔的祝福</title>
+    <title>🌟 来自韩老魔的祝福 🌟</title>
     <style>
-        /* 使用黑色背景，增加冬日氛围 */
         body {
             background-color: #050505;
-            color: #10ff10;
-            font-family: "Courier New", Courier, monospace; /* 必须使用等宽字体 */
+            color: #10ff10; /* 树叶基础色 */
+            font-family: "Courier New", Courier, monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between; /* 顶部底部对齐 */
             height: 100vh;
             margin: 0;
-            overflow: hidden;
+            overflow: hidden; /* 防止滚动条出现 */
+            position: relative;
         }
 
-        /* 核心：确保每一行字符都严格居中且等宽 */
         #tree-wrapper {
             text-align: center;
-            line-height: 1.2;
-            font-size: 16px;
+            line-height: 1.1; /* 更紧凑的树 */
+            font-size: clamp(10px, 4vw, 18px); /* 响应式字体 */
             font-weight: bold;
-            white-space: pre; /* 保留空格 */
+            white-space: pre;
             cursor: default;
             user-select: none;
+            flex-grow: 1; /* 占据中间大部分空间 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 2vh; /* 顶部留白 */
         }
 
-        .star { color: #fff700; text-shadow: 0 0 10px #fff700; }
-        .light { animation: blink 0.8s infinite; }
-        @keyframes blink {
-            50% { opacity: 0.3; }
+        .star {
+            color: #fff700;
+            text-shadow: 0 0 15px #fff700, 0 0 5px orange;
+            animation: pulse-star 1.5s infinite alternate; /* 星星呼吸效果 */
+        }
+        @keyframes pulse-star {
+            from { text-shadow: 0 0 15px #fff700, 0 0 5px orange; opacity: 1; }
+            to { text-shadow: 0 0 8px #fff700, 0 0 2px orange; opacity: 0.8; }
+        }
+
+        .light {
+            display: inline-block; /* 保持字符不被行高切断 */
+            transition: all 0.1s ease-out; /* 平滑过渡颜色变化 */
+        }
+        .light.blink { animation: flicker 0.5s infinite alternate; } /* 彩灯闪烁 */
+        @keyframes flicker {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+        .light.fade { animation: fade-color 2s infinite alternate; } /* 颜色渐变 */
+        @keyframes fade-color {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
         }
 
         /* 祝福语区域样式 */
         #message-area {
-            margin-top: 30px;
             text-align: center;
-            padding: 0 20px;
-        }
-        #greeting {
+            padding: 15px 20px 25px; /* 底部留更多白 */
             color: #ffffff;
-            font-size: 1.2rem;
-            text-shadow: 0 0 8px #ff0000;
-            min-height: 1.5em;
+            text-shadow: 0 0 10px rgba(255,0,0,0.7), 0 0 5px rgba(255,255,255,0.7);
+            font-size: clamp(1rem, 4.5vw, 1.3rem);
+            max-width: 90%;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-sizing: border-box;
+            line-height: 1.4;
+            opacity: 0; /* 初始隐藏 */
+            animation: fade-in-up 1.5s ease-out forwards 2s; /* 延迟渐入动画 */
+            position: relative; /* 确保 z-index 工作 */
+            z-index: 10;
         }
+        #message-area p { margin: 5px 0; }
+        #greeting { min-height: 1.5em; } /* 确保祝福语区域高度 */
         #signature {
-            color: #888;
-            font-size: 0.9rem;
+            color: #ccc;
+            font-size: clamp(0.8rem, 3.5vw, 1rem);
             margin-top: 10px;
         }
+
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         
-        /* 增加飘雪花背景 */
+        /* 雪花特效 */
         .snowflake {
             position: absolute;
-            top: -10px;
             color: white;
-            font-size: 1em;
-            z-index: -1;
-            animation: fall linear;
+            font-size: clamp(0.8em, 2vw, 1.5em);
+            pointer-events: none; /* 不影响点击 */
+            animation: fall linear forwards;
+            z-index: 1; /* 确保雪花在树和文字之间 */
         }
         @keyframes fall {
-            to { transform: translateY(105vh); }
+            from { transform: translateY(-10px) translateX(0); opacity: 0.9; }
+            to { transform: translateY(105vh) translateX(var(--end-x, 0)); opacity: 0.3; }
         }
     </style>
 </head>
@@ -73,8 +111,8 @@
     <div id="tree-wrapper"></div>
 
     <div id="message-area">
-        <div id="greeting"></div>
-        <div id="signature">—— 来自韩老魔的祝福 ——</div>
+        <p id="greeting"></p>
+        <p id="signature">—— 来自韩老魔的祝福 ——</p>
     </div>
 
     <script>
@@ -82,50 +120,60 @@
         const greetingDisplay = document.getElementById('greeting');
         
         const wishes = [
-            "愿你的圣诞充满温馨与奇迹！",
-            "平安夜，愿你一生平安喜乐！",
-            "愿寒冷的冬日里，你总有温暖相随。",
-            "圣诞快乐！所有的好运都奔向你。",
-            "愿你明朗大胆，永远热泪盈眶。",
-            "祝你拥有一个发光的圣诞节！"
+            "愿你的圣诞充满温馨与奇迹，闪耀星光！",
+            "平安夜，愿你一生平安喜乐，万事顺遂！",
+            "愿寒冷的冬日里，你总有温暖相随，幸福常伴。",
+            "圣诞快乐！所有的好运与祝福都奔向你而来。",
+            "愿你明朗大胆，永远热泪盈眶，所求皆如愿。",
+            "祝你拥有一个发光的圣诞节，和美好的新一年！"
         ];
 
-        // 生成圣诞树逻辑
+        const treeHeight = 18; // 树的高度
+        const trunkWidth = 5; // 树干宽度
+
         function buildTree() {
-            const height = 16;
             let treeHTML = "";
+            let maxRowWidth = (2 * treeHeight - 1); // 最宽行的字符数
 
-            // 1. 顶部的星星
-            treeHTML += '<span class="star">★</span>\n';
+            // 顶部的星星，确保居中
+            treeHTML += '<span class="star">' + ' '.repeat(Math.floor((maxRowWidth - 1) / 2)) + '★</span>\n';
 
-            // 2. 树体层
-            for (let i = 1; i <= height; i++) {
-                let row = "";
-                // 计算每一行应该有的星号数量 (1, 3, 5, 7...)
-                let starsCount = 2 * i - 1;
+            // 树体层
+            for (let i = 1; i <= treeHeight; i++) {
+                let rowChars = [];
+                let starsCount = 2 * i - 1; // 当前行的字符数
                 
+                // 填充字符
                 for (let j = 0; j < starsCount; j++) {
                     let rand = Math.random();
-                    if (rand > 0.9) {
-                        row += '<span class="light" style="color:red">o</span>';
-                    } else if (rand > 0.8) {
-                        row += '<span class="light" style="color:cyan">i</span>';
-                    } else if (rand > 0.7) {
-                        row += '<span class="light" style="color:orange">@</span>';
-                    } else {
-                        row += "*";
+                    if (rand < 0.08) { // 红灯
+                        rowChars.push('<span class="light" style="color:#f00;">●</span>');
+                    } else if (rand < 0.16) { // 蓝灯
+                        rowChars.push('<span class="light" style="color:#00f;">◆</span>');
+                    } else if (rand < 0.24) { // 黄灯
+                        rowChars.push('<span class="light" style="color:#ff0;">▲</span>');
+                    } else if (rand < 0.3) { // 3D感白点
+                        rowChars.push('<span class="light" style="color:white; opacity:' + (0.5 + Math.random() * 0.5) + ';">*</span>');
+                    }
+                    else { // 普通叶子
+                        rowChars.push("*");
                     }
                 }
-                treeHTML += row + "\n";
+                treeHTML += rowChars.join('') + "\n";
             }
 
-            // 3. 树根 (确保绝对居中)
-            // 树根宽度固定为3个字符，无论树多大，它都应该在中心
-            const trunk = "MMMMM";
-            treeHTML += trunk + "\n";
-            treeHTML += trunk + "\n";
+            // 树根 (居中)
+            const trunkOffset = Math.floor((maxRowWidth - trunkWidth) / 2);
+            for (let i = 0; i < 3; i++) { // 3层树干
+                treeHTML += ' '.repeat(trunkOffset) + '|||'.padEnd(trunkWidth, '|') + '\n';
+            }
 
             treeContainer.innerHTML = treeHTML;
+            // 随机添加闪烁和渐变效果
+            document.querySelectorAll('#tree-wrapper .light').forEach(light => {
+                if (Math.random() > 0.6) light.classList.add('blink');
+                else if (Math.random() > 0.6) light.classList.add('fade');
+            });
         }
 
         // 随机祝福语
@@ -133,23 +181,27 @@
             greetingDisplay.innerText = wishes[Math.floor(Math.random() * wishes.length)];
         }
 
-        // 简单的雪花效果
+        // 雪花特效
         function createSnow() {
             const snow = document.createElement('div');
             snow.innerHTML = "❄";
             snow.className = "snowflake";
             snow.style.left = Math.random() * 100 + "vw";
-            snow.style.animationDuration = Math.random() * 3 + 2 + "s";
-            snow.style.opacity = Math.random();
+            snow.style.animationDuration = Math.random() * 3 + 2 + "s"; // 2-5秒
+            snow.style.animationDelay = Math.random() * 2 + "s"; // 延迟出现
+            snow.style.opacity = Math.random() * 0.7 + 0.3; // 透明度
+            snow.style.fontSize = Math.random() * 0.7 + 0.8 + "em"; // 大小
+            snow.style.setProperty('--end-x', (Math.random() * 40 - 20) + 'vw'); // 左右飘动
             document.body.appendChild(snow);
             setTimeout(() => snow.remove(), 5000);
         }
 
-        // 初始化
-        setInterval(buildTree, 600); // 闪烁效果
-        setInterval(createSnow, 200); // 下雪效果
+        // 初始加载和循环
         showRandomWish();
         buildTree();
+        setInterval(buildTree, 1000); // 每秒重绘树，灯光随机变化
+        setInterval(createSnow, 300); // 持续下雪
+
     </script>
 </body>
 </html>
